@@ -10,6 +10,8 @@ import (
 	"github.com/google/uuid"
 )
 
+const MAX_VERSION = 1
+
 type PassCard struct {
 	Rows int
 	Cols int
@@ -27,6 +29,23 @@ func (pci *PassCardIdentifier) String() string {
 	return fmt.Sprintf("v%d.%02x.%s", pci.Version, pci.CharsetFlag, pci.Seed.String())
 }
 
+func WithRandomSeed(v int, cs byte) (*PassCardIdentifier, error) {
+	if v > MAX_VERSION {
+		return nil, errors.New("version is too large")
+	}
+
+	seed, err := uuid.NewRandom()
+	if err != nil {
+		return nil, err
+	}
+
+	return &PassCardIdentifier{
+		v,
+		cs,
+		seed,
+	}, nil
+}
+
 func FromString(s string) (*PassCardIdentifier, error) {
 	components := strings.Split(s, ".")
 	if len(components) != 3 {
@@ -38,13 +57,17 @@ func FromString(s string) (*PassCardIdentifier, error) {
 		return nil, errors.New("the first component of the identifier has to start with 'v'")
 	}
 
-	version, err := strconv.Atoi(components[0][1:])
+	v, err := strconv.Atoi(components[0][1:])
 	if err != nil {
 		return nil, errors.New("the first component of the identifier has to contin a valid integer after the 'v'")
 	}
 
-	charsetFlagArray, err := hex.DecodeString(components[1])
-	if err != nil || len(charsetFlagArray) != 1 {
+	if v > MAX_VERSION {
+		return nil, errors.New("version is too large")
+	}
+
+	csa, err := hex.DecodeString(components[1])
+	if err != nil || len(csa) != 1 {
 		return nil, errors.New("the second component of the identifier has to be a valid hex and not lager than '0xFF'")
 	}
 
@@ -54,8 +77,8 @@ func FromString(s string) (*PassCardIdentifier, error) {
 	}
 
 	return &PassCardIdentifier{
-		version,
-		charsetFlagArray[0],
+		v,
+		csa[0],
 		seed,
 	}, nil
 }

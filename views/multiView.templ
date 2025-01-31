@@ -1,0 +1,19 @@
+package views
+
+import "github.com/ledex/passcard-generator/model"
+import "strconv"
+
+templ MultiView(pcs []*model.PassCard) {
+    <div class={ passwordCard() }>
+        Generated {strconv.Itoa(len(pcs))} pass-cards.
+        for i, pc := range pcs {
+            <div style="padding-top: 5px;">
+                <b>#{ strconv.Itoa(i) } below</b><br>
+                @PasswordCardView(*pc)
+            </div>
+            
+        }
+    </div>
+}
+
+
