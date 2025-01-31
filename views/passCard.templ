@@ -1,0 +1,103 @@
+package views
+
+import (
+	"fmt"
+	"github.com/ledex/passcard-generator/model"
+	"strconv"
+	"strings"
+)
+
+func addDashesEveryFour(s string) string {
+	var result strings.Builder
+	for i, char := range s {
+		if i > 0 && i%4 == 0 {
+			result.WriteRune('-')
+		}
+		result.WriteRune(char)
+	}
+	return result.String()
+}
+
+func generateTableHeader(i int) string {
+	n := i / 4
+
+	if n <= 0 {
+		return ""
+	}
+
+	var result strings.Builder
+	for i := 1; i <= n; i++ {
+		if i > 1 {
+			result.WriteString("-")
+		}
+		result.WriteString(fmt.Sprintf("%04d", i))
+	}
+
+	if i%4 != 0 {
+		result.WriteString(strings.Repeat("-", i%4+1))
+	}
+
+	return result.String()
+}
+
+//go:generate templ generate
+templ PasswordCardView(pc model.PassCard) {
+	<div class={ passwordCard() }>
+		<header class={ passwordCardHeader() }>
+			<strong>{ pc.Pci.String() }</strong>
+			<span>{ strconv.Itoa(pc.Rows) } * { strconv.Itoa(pc.Cols) }</span>
+		</header>
+		<table class={ passwordCardTable() }>
+			<thead>
+				<tr>
+					<th></th>
+					<th>{ generateTableHeader(pc.Cols) }</th>
+				</tr>
+			</thead>
+			<tbody>
+				for i, row := range pc.Data {
+					<tr>
+						<td class={ rowNumber() }>
+							<strong>{ strconv.Itoa(i + 1) }</strong>
+						</td>
+						<td class={ rowData() }>
+							{ addDashesEveryFour(row) }
+						</td>
+					</tr>
+				}
+			</tbody>
+		</table>
+		<footer class={ passwordCardFooter() }>github.com/ledex/passcard</footer>
+	</div>
+}
+
+css passwordCard() {
+	font-family: monospace, monospace;
+	border: 1px dashed #000;
+	display: inline-block;
+	padding: 10px;
+}
+
+css passwordCardHeader() {
+	font-size: 0.8em;
+	margin-bottom: 5px;
+}
+
+css passwordCardTable() {
+	border-collapse: collapse;
+	margin-top: 5px;
+}
+
+css rowNumber() {
+	text-align: right;
+	padding-right: 5px;
+}
+
+css rowData() {
+	padding-left: 5px;
+}
+
+css passwordCardFooter() {
+	font-size: 0.8em;
+	margin-top: 5px;
+}
